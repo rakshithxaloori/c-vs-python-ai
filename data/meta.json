@@ -1,0 +1,1 @@
+{"n_train": 4096, "n_test": 1000, "classes": ["circle", "square", "triangle", "cross", "ring", "h-stripes", "v-stripes", "diagonal", "checker", "dots"], "n_params": 146026}

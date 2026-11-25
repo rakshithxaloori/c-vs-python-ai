@@ -1,0 +1,395 @@
+<title>Same Net, Seven Engines</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single lab-notebook column; each section is one experiment with its figure. */
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #17202b; --muted: #5b6878; --rule: #dde2e9; --grid: #e9edf2;
+  --accent: #1e3a8a;
+  --py-pure: #c2410c; --py-numpy: #d97706; --py-torch-cpu: #9a6a12; --py-torch-mps: #be185d;
+  --c-O0: #4aa3bd; --c-O3: #0e7490; --c-blas: #1e3a8a;
+  --code-bg: #eef1f5;
+  --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141b; --panel: #161d27; --fg: #e6ebf1; --muted: #93a1b3; --rule: #263140; --grid: #1f2935;
+  --accent: #8fb0ff;
+  --py-pure: #fb7a45; --py-numpy: #f5b03c; --py-torch-cpu: #d6ad55; --py-torch-mps: #f472b6;
+  --c-O0: #7cc8dd; --c-O3: #2fb8d6; --c-blas: #8fb0ff; --code-bg: #1b2430; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f141b; --panel: #161d27; --fg: #e6ebf1; --muted: #93a1b3; --rule: #263140; --grid: #1f2935;
+  --accent: #8fb0ff;
+  --py-pure: #fb7a45; --py-numpy: #f5b03c; --py-torch-cpu: #d6ad55; --py-torch-mps: #f472b6;
+  --c-O0: #7cc8dd; --c-O3: #2fb8d6; --c-blas: #8fb0ff; --code-bg: #1b2430; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.3rem); line-height: 1.05; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.05rem; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.lede { font-size: 1.12rem; color: var(--muted); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.hero { display: flex; flex-direction: column; gap: 20px; }
+.hero-stat { display: flex; flex-wrap: wrap; gap: 12px 40px; align-items: baseline; border-top: 1px solid var(--rule); padding-top: 20px; }
+.hero-stat .big { font-family: var(--display); font-weight: 700; font-size: clamp(2.6rem, 7vw, 4.4rem); line-height: 1; color: var(--accent); }
+.hero-stat .cap { color: var(--muted); max-width: 46ch; }
+.samples { display: flex; flex-wrap: wrap; gap: 6px; }
+.samples figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.samples canvas { width: 48px; height: 48px; image-rendering: pixelated; border-radius: 3px; }
+.samples figcaption { font-family: var(--mono); font-size: 0.62rem; color: var(--muted); }
+.figure { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.figure svg { display: block; width: 100%; height: auto; overflow: visible; }
+.svg-scroll { overflow-x: auto; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: 600 0.85rem var(--body); color: var(--fg); background: transparent; border: 1px solid var(--rule); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button[aria-pressed="true"] { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.clock { font-family: var(--mono); font-size: 0.9rem; color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+.board { display: grid; grid-template-columns: minmax(150px, 220px) 1fr minmax(92px, auto); gap: 6px 12px; align-items: center; font-size: 0.88rem; }
+.board .lab { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.board .sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.board .track { height: 10px; background: var(--grid); border-radius: 5px; overflow: hidden; }
+.board .fill { height: 100%; border-radius: 5px; }
+.board .val { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 0.8rem; }
+.note { font-size: 0.88rem; color: var(--muted); }
+table { border-collapse: collapse; width: 100%; font-size: 0.86rem; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+td.num { text-align: right; }
+.table-scroll { overflow-x: auto; }
+.lessons { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.lesson { border-top: 3px solid var(--accent); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.lesson .ratio { font-family: var(--display); font-size: 1.9rem; font-weight: 700; }
+.code-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.code-pair > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+pre { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 14px; overflow-x: auto; font: 0.78rem/1.55 var(--mono); }
+.stack { display: flex; flex-direction: column; gap: 6px; }
+.stack .row { display: grid; grid-template-columns: minmax(140px, 200px) 1fr; gap: 12px; font-size: 0.9rem; border-bottom: 1px solid var(--rule); padding-bottom: 6px; }
+.stack .row > :first-child { font-weight: 600; }
+.stack .row > :last-child { min-width: 0; color: var(--muted); }
+code { font-family: var(--mono); font-size: 0.85em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+@media (max-width: 560px) {
+  .board { grid-template-columns: 1fr 72px; }
+  .board .track { grid-column: 1 / -1; order: 3; }
+  .stack .row { grid-template-columns: 1fr; gap: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Benchmark · MiniAlexNet · <span id="machine"></span></span>
+  <h1>Same network, same weights, same math.<br>Seven engines.</h1>
+  <p class="lede">One AlexNet-shaped convolutional network (5 conv + 3 fully connected layers, <span id="nparams" class="num"></span> parameters) was trained from the exact same starting weights, on the exact same images in the exact same order, by seven implementations: four driven by Python, three written in C. Each got the same 60-second training budget.</p>
+  <div class="hero-stat">
+    <span class="big num" id="hero-ratio"></span>
+    <span class="cap" id="hero-cap"></span>
+  </div>
+  <div class="samples" id="samples" aria-label="Sample training images, one row of ten classes"></div>
+</header>
+
+<section id="race">
+  <span class="eyebrow">Experiment 1 · 60-second training race</span>
+  <h2>Who learns the most in a minute?</h2>
+  <p>Every implementation saved its weights 20 times during training. Each snapshot was then scored on the same 1,000 held-out images. Press replay to watch the minute unfold at 5× speed. The axis runs slightly past 60 s because a step is never cut short, and one pure-Python SGD step takes about 16 seconds.</p>
+  <div class="figure">
+    <div class="controls">
+      <button id="replay" type="button">Replay at 5×</button>
+      <button id="m-acc" type="button" aria-pressed="true">Test accuracy</button>
+      <button id="m-loss" type="button" aria-pressed="false">Training loss</button>
+      <span class="clock" id="clock">t = 60.0 s</span>
+    </div>
+    <div class="svg-scroll"><svg id="race-svg" viewBox="0 0 900 380" role="img" aria-label="Accuracy over training time for each implementation"></svg></div>
+    <div>
+      <div class="note" style="margin-bottom:8px">Images trained on so far</div>
+      <div class="board" id="board"></div>
+    </div>
+  </div>
+</section>
+
+<section id="throughput">
+  <span class="eyebrow">Experiment 2 · training throughput</span>
+  <h2>Training speed, images per second</h2>
+  <p>Forward pass, backward pass and SGD-momentum update, batch of 16. The axis is logarithmic: each gridline is 10× faster than the one before.</p>
+  <div class="figure"><div class="svg-scroll"><svg id="tp-svg" viewBox="0 0 900 330" role="img" aria-label="Training images per second, log scale"></svg></div></div>
+</section>
+
+<section id="latency">
+  <span class="eyebrow">Experiment 3 · inference latency</span>
+  <h2>Time to classify one image</h2>
+  <p>Batch size 1, median of repeated runs. This is the serving and real-time case, such as a camera frame that needs an answer now. Shorter is better; the axis is logarithmic.</p>
+  <div class="figure"><div class="svg-scroll"><svg id="lat-svg" viewBox="0 0 900 330" role="img" aria-label="Single image inference latency in milliseconds, log scale"></svg></div></div>
+</section>
+
+<section id="lessons">
+  <span class="eyebrow">What the numbers say</span>
+  <h2>Three separate effects hide inside "C vs Python"</h2>
+  <div class="lessons" id="lesson-cards"></div>
+</section>
+
+<section id="code">
+  <span class="eyebrow">The hot loop</span>
+  <h2>The same five lines, two languages</h2>
+  <p>This is the innermost loop of the convolution in <code>python/pure_python.py</code> and <code>c/alexnet.c</code>. The algorithm is identical. In C each line compiles to a few machine instructions. In CPython each <code>+=</code> becomes a run of bytecodes: two list lookups, a float multiply that allocates a new object, and a float add that allocates another.</p>
+  <div class="code-pair">
+    <div><span class="eyebrow">Python</span><pre>for ci in range(C):
+    for ki in range(k):
+        xrow = (ci*Hp + i + ki)*Wp + j
+        wrow = wbase + (ci*k + ki)*k
+        for kj in range(k):
+            s += w[wrow+kj] * xp[xrow+kj]</pre></div>
+    <div><span class="eyebrow">C</span><pre>for (int ci = 0; ci &lt; C; ci++)
+  for (int ki = 0; ki &lt; k; ki++) {
+    const float *xr = &amp;xp[(ci*Hp + i + ki)*Wp + j];
+    const float *wr = &amp;wc[(ci*k + ki)*k];
+    for (int kj = 0; kj &lt; k; kj++)
+      acc += wr[kj] * xr[kj];
+  }</pre></div>
+  </div>
+</section>
+
+<section id="parity">
+  <span class="eyebrow">Sanity check</span>
+  <h2>They really are computing the same thing</h2>
+  <p>Training loss after each of the first three SGD steps (batch 4), starting from the shared initial weights. Agreement to about six significant digits means any speed difference comes from how the math is executed, never from what is computed. The tiny differences come from float32 vs float64 and the order of additions.</p>
+  <div class="figure table-scroll"><table id="parity-table"></table></div>
+</section>
+
+<section id="stack">
+  <span class="eyebrow">The contestants</span>
+  <h2>What each engine actually is</h2>
+  <div class="stack" id="stack"></div>
+  <p class="note">The same C source file builds all three C binaries. Fast Python, meaning NumPy and PyTorch, is Python handing work to compiled C, C++ and assembly. NumPy here calls Apple Accelerate for matrix multiplies, the same library the C + BLAS build links against.</p>
+</section>
+
+<section id="method">
+  <span class="eyebrow">Method</span>
+  <h2>Reproduce it</h2>
+  <p>The dataset is 4,096 training and 1,000 test images (32×32 RGB, 10 procedurally drawn shape classes), generated locally with a fixed seed, so nothing is downloaded. Implementations run one at a time so they never compete for the CPU. Snapshot saving is excluded from the training clock. Pure Python runs only a couple of SGD steps in its minute, so its curve barely leaves the starting point.</p>
+  <pre>cd c-vs-python-ai
+python3.14 -m venv .venv &amp;&amp; .venv/bin/pip install numpy torch
+.venv/bin/python run_benchmarks.py --budget 60
+.venv/bin/python report/build_report.py</pre>
+</section>
+
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const SAMPLES = /*__SAMPLES__*/null;
+
+const COLOR = { python_pure: "--py-pure", python_numpy: "--py-numpy", python_torch_cpu: "--py-torch-cpu",
+  python_torch_mps: "--py-torch-mps", c_O0: "--c-O0", c_O3: "--c-O3", c_blas: "--c-blas" };
+const DESC = {
+  python_pure: "CPython interpreter running nested for-loops over Python lists. No libraries. Same loop nest as the C direct build.",
+  c_O0: "The direct-loop C code with compiler optimisation turned off. Every variable round-trips through memory.",
+  c_O3: "The same direct-loop C code at -O3 for this CPU. One thread, no libraries.",
+  python_numpy: "Python orchestrates. Convolutions become im2col plus one big matrix multiply in NumPy (Accelerate BLAS).",
+  python_torch_cpu: "PyTorch eager mode on CPU. Python calls into C++ ATen kernels, with autograd recording each op.",
+  python_torch_mps: "PyTorch on the Apple GPU through Metal. Each op is a kernel launch from Python.",
+  c_blas: "C with im2col plus cblas_sgemm (Accelerate), the same strategy as NumPy, with no interpreter in the loop.",
+};
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const col = d => css(COLOR[d.name]);
+const byName = Object.fromEntries(DATA.impls.map(d => [d.name, d]));
+const fmt = (v, d = 0) => v.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
+const fmtX = v => v >= 100 ? fmt(v) + "×" : v >= 10 ? fmt(v, 0) + "×" : fmt(v, 1) + "×";
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text !== undefined) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+/* ---------- header ---------- */
+const m = DATA.machine;
+document.getElementById("machine").textContent = `${m.cpu}, Python ${m.python}, NumPy ${m.numpy}` + (m.torch ? `, PyTorch ${m.torch}` : "");
+document.getElementById("nparams").textContent = fmt(DATA.n_params);
+const slow = byName.python_pure, fast = DATA.impls.reduce((a, b) => a.images_per_sec > b.images_per_sec ? a : b);
+document.getElementById("hero-ratio").textContent = fmtX(fast.images_per_sec / slow.images_per_sec);
+document.getElementById("hero-cap").textContent =
+  `How much faster ${fast.label} trains than pure Python on identical work: ${fmt(fast.images_per_sec)} vs ${fmt(slow.images_per_sec, 1)} images per second. The answer is mostly about what runs the inner loop, and only partly about which language you write in.`;
+
+(function samples() {
+  const box = document.getElementById("samples");
+  SAMPLES.items.forEach(s => {
+    const f = document.createElement("figure");
+    const c = document.createElement("canvas"); c.width = 32; c.height = 32;
+    const ctx = c.getContext("2d"), img = ctx.createImageData(32, 32);
+    const raw = atob(s.b64);
+    for (let i = 0; i < 1024; i++) { img.data[i*4] = raw.charCodeAt(i*3); img.data[i*4+1] = raw.charCodeAt(i*3+1); img.data[i*4+2] = raw.charCodeAt(i*3+2); img.data[i*4+3] = 255; }
+    ctx.putImageData(img, 0, 0);
+    const cap = document.createElement("figcaption"); cap.textContent = SAMPLES.classes[s.cls];
+    f.append(c, cap); box.appendChild(f);
+  });
+})();
+
+/* ---------- race ---------- */
+const BUDGET = Math.max(...DATA.impls.map(d => d.elapsed));
+let metric = "acc", tNow = BUDGET, anim = null;
+function ema(points, a = 0.06) {
+  let s = null; return points.map(p => (s = s === null ? p.loss : s + a * (p.loss - s), { t: p.t, v: s }));
+}
+const lossSeries = Object.fromEntries(DATA.impls.map(d => [d.name, [{ t: 0, v: Math.log(10) }, ...ema(d.loss_curve)]]));
+function drawRace() {
+  const svg = document.getElementById("race-svg"); svg.innerHTML = "";
+  const W = 900, H = 380, L = 52, R = 170, T = 14, B = 40;
+  const x = t => L + (t / BUDGET) * (W - L - R);
+  const yMax = metric === "acc" ? 1 : 2.5, yMin = 0;
+  const y = v => T + (1 - (Math.min(v, yMax) - yMin) / (yMax - yMin)) * (H - T - B);
+  const ticks = metric === "acc" ? [0, .2, .4, .6, .8, 1] : [0, .5, 1, 1.5, 2, 2.5];
+  ticks.forEach(v => {
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: css("--grid") }, svg);
+    el("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end", fill: css("--muted"), "font-size": 11, "font-family": css("--mono") }, svg,
+      metric === "acc" ? Math.round(v * 100) + "%" : v.toFixed(1));
+  });
+  for (let t = 0; t <= BUDGET + 0.01; t += 10) {
+    el("line", { x1: x(t), x2: x(t), y1: H - B, y2: H - B + 4, stroke: css("--muted") }, svg);
+    el("text", { x: x(t), y: H - B + 18, "text-anchor": "middle", fill: css("--muted"), "font-size": 11, "font-family": css("--mono") }, svg, t + " s");
+  }
+  el("text", { x: L, y: H - 4, fill: css("--muted"), "font-size": 11 }, svg, "training time (wall clock)");
+  if (metric === "acc") {
+    el("line", { x1: L, x2: W - R, y1: y(0.1), y2: y(0.1), stroke: css("--muted"), "stroke-dasharray": "3 4" }, svg);
+    el("text", { x: W - R - 4, y: y(0.1) - 5, "text-anchor": "end", fill: css("--muted"), "font-size": 10 }, svg, "random guessing (10%)");
+  }
+  const ends = [];
+  DATA.impls.forEach(d => {
+    const pts = metric === "acc" ? d.acc_curve.map(p => ({ t: p.t, v: p.acc })) : lossSeries[d.name];
+    const vis = pts.filter(p => p.t <= tNow);
+    if (!vis.length) return;
+    // extend flat to the current time if the implementation is still "running"
+    const last = vis[vis.length - 1], endT = Math.min(tNow, d.elapsed);
+    const path = vis.map((p, i) => (i ? "L" : "M") + x(p.t).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ") + ` L${x(endT).toFixed(1)} ${y(last.v).toFixed(1)}`;
+    el("path", { d: path, fill: "none", stroke: col(d), "stroke-width": d.group === "c" ? 2.6 : 2.2,
+      "stroke-dasharray": d.group === "c" ? "" : "", "stroke-linejoin": "round" }, svg);
+    el("circle", { cx: x(endT), cy: y(last.v), r: 3.5, fill: col(d) }, svg);
+    ends.push({ d, yy: y(last.v), v: last.v, xx: x(endT) });
+  });
+  // direct labels at the right edge, nudged apart
+  ends.sort((a, b) => a.yy - b.yy);
+  const gap = 15;
+  for (let i = 1; i < ends.length; i++) if (ends[i].yy - ends[i - 1].yy < gap) ends[i].yy = ends[i - 1].yy + gap;
+  const over = ends.length ? ends[ends.length - 1].yy - (H - B + 4) : 0;
+  if (over > 0) ends.forEach(e => e.yy -= over);
+  ends.forEach(e => {
+    const lx = W - R + 10;
+    el("line", { x1: e.xx, x2: lx - 3, y1: y(e.v), y2: e.yy, stroke: col(e.d), "stroke-opacity": 0.35 }, svg);
+    el("text", { x: lx, y: e.yy + 4, fill: col(e.d), "font-size": 11.5, "font-weight": 600 }, svg,
+      e.d.label.replace(" (unoptimised)", "").replace(" (direct loops)", "").replace(" (im2col+GEMM)", "") + "  " +
+      (metric === "acc" ? Math.round(e.v * 100) + "%" : e.v.toFixed(2)));
+  });
+  drawBoard();
+  document.getElementById("clock").textContent = `t = ${tNow.toFixed(1)} s`;
+}
+function imagesAt(d, t) {
+  if (t >= d.elapsed) return d.images;
+  const lc = d.loss_curve; let best = 0;
+  for (const p of lc) { if (p.t <= t) best = p.step * 16; else break; }
+  return best;
+}
+const maxImages = Math.max(...DATA.impls.map(d => d.images));
+function drawBoard() {
+  const b = document.getElementById("board");
+  if (!b.children.length) {
+    DATA.impls.forEach(d => {
+      b.insertAdjacentHTML("beforeend",
+        `<div class="lab"><span class="sw" style="background:${col(d)}"></span><span>${d.label}</span></div>
+         <div class="track"><div class="fill" id="fill-${d.name}" style="background:${col(d)}"></div></div>
+         <div class="val" id="val-${d.name}"></div>`);
+    });
+  }
+  DATA.impls.forEach(d => {
+    const n = imagesAt(d, tNow);
+    document.getElementById("fill-" + d.name).style.width = Math.max(0.15, 100 * n / maxImages) + "%";
+    document.getElementById("val-" + d.name).textContent = fmt(n) + " img";
+  });
+}
+document.getElementById("replay").onclick = () => {
+  cancelAnimationFrame(anim);
+  const start = performance.now(), speed = 5;
+  const tick = now => { tNow = Math.min(BUDGET, (now - start) / 1000 * speed); drawRace(); if (tNow < BUDGET) anim = requestAnimationFrame(tick); };
+  anim = requestAnimationFrame(tick);
+};
+function setMetric(mm) {
+  metric = mm;
+  document.getElementById("m-acc").setAttribute("aria-pressed", mm === "acc");
+  document.getElementById("m-loss").setAttribute("aria-pressed", mm === "loss");
+  drawRace();
+}
+document.getElementById("m-acc").onclick = () => setMetric("acc");
+document.getElementById("m-loss").onclick = () => setMetric("loss");
+
+/* ---------- log bar charts ---------- */
+function logBars(svgId, rows, unit, better) {
+  const svg = document.getElementById(svgId); svg.innerHTML = "";
+  const W = 900, rowH = 38, T = 10, L = 210, R = 150, H = T + rows.length * rowH + 34;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const vals = rows.map(r => r.v);
+  const lo = Math.pow(10, Math.floor(Math.log10(Math.min(...vals)))), hi = Math.pow(10, Math.ceil(Math.log10(Math.max(...vals))));
+  const x = v => L + (Math.log10(v) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo)) * (W - L - R);
+  for (let p = lo; p <= hi * 1.001; p *= 10) {
+    el("line", { x1: x(p), x2: x(p), y1: T - 4, y2: H - 28, stroke: css("--grid") }, svg);
+    el("text", { x: x(p), y: H - 10, "text-anchor": "middle", fill: css("--muted"), "font-size": 11, "font-family": css("--mono") }, svg,
+      p >= 1 ? fmt(p) : String(p));
+  }
+  el("text", { x: W - R, y: H - 10, "text-anchor": "start", fill: css("--muted"), "font-size": 11, dx: 10 }, svg, unit);
+  const ref = rows.find(r => r.d.name === "python_pure");
+  rows.forEach((r, i) => {
+    const cy = T + i * rowH + rowH / 2;
+    el("text", { x: L - 12, y: cy + 4, "text-anchor": "end", fill: css("--fg"), "font-size": 12.5 }, svg, r.d.label);
+    el("rect", { x: L, y: cy - 10, width: Math.max(2, x(r.v) - L), height: 20, rx: 3, fill: col(r.d) }, svg);
+    const rel = better === "high" ? r.v / ref.v : ref.v / r.v;
+    const txt = (r.v >= 100 ? fmt(r.v) : r.v >= 1 ? fmt(r.v, 1) : fmt(r.v, 3)) + (r.d.name === "python_pure" ? "  (baseline)" : `  ${fmtX(rel)} vs pure Python`);
+    el("text", { x: x(r.v) + 8, y: cy + 4, fill: css("--fg"), "font-size": 11.5, "font-family": css("--mono") }, svg, txt);
+  });
+}
+function drawBars() {
+  logBars("tp-svg", [...DATA.impls].sort((a, b) => a.images_per_sec - b.images_per_sec).map(d => ({ d, v: d.images_per_sec })), "images / s", "high");
+  logBars("lat-svg", [...DATA.impls].sort((a, b) => b.infer_ms - a.infer_ms).map(d => ({ d, v: d.infer_ms })), "ms / image", "low");
+}
+
+/* ---------- lessons ---------- */
+(function lessons() {
+  const P = byName.python_pure, O3 = byName.c_O3, NP = byName.python_numpy, CB = byName.c_blas, TC = byName.python_torch_cpu, MPS = byName.python_torch_mps;
+  const cards = [
+    { r: fmtX(O3.images_per_sec / P.images_per_sec), h: "The interpreter tax",
+      t: `Same loops, same algorithm: C at -O3 trains ${fmtX(O3.images_per_sec / P.images_per_sec)} faster than pure Python (${fmt(O3.images_per_sec)} vs ${fmt(P.images_per_sec, 1)} img/s). This is the real cost of running inner loops in CPython, and it is the gap people mean when they say Python is slow.` },
+    { r: fmtX(NP.images_per_sec / O3.images_per_sec), h: "The algorithm beats the language",
+      t: `Python + NumPy is ${fmtX(NP.images_per_sec / O3.images_per_sec)} faster than hand-written C with plain loops. NumPy reshapes convolution into one large matrix multiply that a tuned BLAS runs with SIMD and multiple cores. Writing C does not make code fast by itself; using the right kernels does.` },
+    { r: fmtX(CB.images_per_sec / Math.max(NP.images_per_sec, TC ? TC.images_per_sec : 0)), h: "Python in the hot path still costs",
+      t: `With the same BLAS underneath, C + BLAS is ${fmtX(CB.images_per_sec / NP.images_per_sec)} faster than NumPy` + (TC ? ` and ${fmtX(CB.images_per_sec / TC.images_per_sec)} faster than PyTorch CPU` : "") +
+         `. On a small network every Python op, allocation and kernel launch is overhead the math cannot hide.` + (MPS ? ` The GPU path is ${MPS.images_per_sec < TC.images_per_sec ? "even slower than the CPU here" : "held back too"}: launch latency dominates kernels this small.` : "") +
+         ` At batch 1 the overhead is plain: C + BLAS takes ${fmt(CB.infer_ms, 3)} ms per image vs ${fmt(TC ? TC.infer_ms : NP.infer_ms, 3)} ms for ${TC ? "PyTorch" : "NumPy"}.` },
+  ];
+  document.getElementById("lesson-cards").innerHTML = cards.map(c =>
+    `<div class="lesson"><span class="ratio num">${c.r}</span><h3>${c.h}</h3><p class="note">${c.t}</p></div>`).join("");
+})();
+
+/* ---------- parity + stack ---------- */
+(function parity() {
+  const t = document.getElementById("parity-table");
+  t.innerHTML = `<thead><tr><th>Implementation</th><th style="text-align:right">Step 1</th><th style="text-align:right">Step 2</th><th style="text-align:right">Step 3</th></tr></thead><tbody>` +
+    DATA.impls.map(d => `<tr><td><span class="sw" style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;background:${col(d)}"></span>${d.label}</td>` +
+      d.parity_losses.map(v => `<td class="num">${v.toFixed(6)}</td>`).join("") + "</tr>").join("") + "</tbody>";
+  document.getElementById("stack").innerHTML = DATA.impls.map(d =>
+    `<div class="row"><div style="color:${col(d)}">${d.label}</div><div>${DESC[d.name]}</div></div>`).join("");
+})();
+
+function drawAll() { drawRace(); drawBars(); document.getElementById("board").innerHTML = ""; drawBoard(); }
+drawAll();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>

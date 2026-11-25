@@ -1,0 +1,45 @@
+
+=== Pure Python ===
+  $ .venv/bin/python python/pure_python.py --mode steps --steps 3 --batch 4 --name python_pure
+  $ .venv/bin/python python/pure_python.py --mode train --budget 60.0 --name python_pure
+  $ .venv/bin/python python/pure_python.py --mode infer --budget 5 --name python_pure
+
+=== C, -O0 (unoptimised) ===
+  $ c/alexnet_O0 --mode steps --steps 3 --batch 4 --name c_O0
+  $ c/alexnet_O0 --mode train --budget 60.0 --name c_O0
+  $ c/alexnet_O0 --mode infer --budget 5 --name c_O0
+
+=== C, -O3 (direct loops) ===
+  $ c/alexnet_O3 --mode steps --steps 3 --batch 4 --name c_O3
+  $ c/alexnet_O3 --mode train --budget 60.0 --name c_O3
+  $ c/alexnet_O3 --mode infer --budget 5 --name c_O3
+
+=== Python + NumPy ===
+  $ .venv/bin/python python/numpy_impl.py --mode steps --steps 3 --batch 4 --name python_numpy
+  $ .venv/bin/python python/numpy_impl.py --mode train --budget 60.0 --name python_numpy
+  $ .venv/bin/python python/numpy_impl.py --mode infer --budget 5 --name python_numpy
+
+=== Python + PyTorch (CPU) ===
+  $ .venv/bin/python python/torch_impl.py --device cpu --mode steps --steps 3 --batch 4 --name python_torch_cpu
+  $ .venv/bin/python python/torch_impl.py --device cpu --mode train --budget 60.0 --name python_torch_cpu
+  $ .venv/bin/python python/torch_impl.py --device cpu --mode infer --budget 5 --name python_torch_cpu
+
+=== Python + PyTorch (GPU/MPS) ===
+  $ .venv/bin/python python/torch_impl.py --device mps --mode steps --steps 3 --batch 4 --name python_torch_mps
+  $ .venv/bin/python python/torch_impl.py --device mps --mode train --budget 60.0 --name python_torch_mps
+  $ .venv/bin/python python/torch_impl.py --device mps --mode infer --budget 5 --name python_torch_mps
+
+=== C + BLAS (im2col+GEMM) ===
+  $ c/alexnet_blas --mode steps --steps 3 --batch 4 --name c_blas
+  $ c/alexnet_blas --mode train --budget 60.0 --name c_blas
+  $ c/alexnet_blas --mode infer --budget 5 --name c_blas
+Pure Python                           1.0 img/s   acc 0.111   infer   616.709 ms
+C, -O0 (unoptimised)                 29.6 img/s   acc 0.232   infer    26.885 ms
+C, -O3 (direct loops)               139.9 img/s   acc 0.748   infer     6.011 ms
+Python + NumPy                      515.3 img/s   acc 0.944   infer     0.479 ms
+Python + PyTorch (CPU)             1455.3 img/s   acc 0.988   infer     0.310 ms
+Python + PyTorch (GPU/MPS)         1226.9 img/s   acc 0.988   infer     2.175 ms
+C + BLAS (im2col+GEMM)             2979.5 img/s   acc 0.985   infer     0.159 ms
+
+wrote results/summary.json
+wrote /Users/rakshithaloori/Projects/c-vs-python-ai/report/index.html (212 KB)
